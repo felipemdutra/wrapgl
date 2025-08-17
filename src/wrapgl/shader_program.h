@@ -1,6 +1,7 @@
 #ifndef SHADERPROGRAM_H
 #define SHADERPROGRAM_H
 
+#include <GL/glew.h>
 #include <string>
 
 #include <glm/glm.hpp>
@@ -9,7 +10,7 @@ namespace wgl {
 
 class ShaderProgram {
 private:
-        const unsigned int kProgramId;
+        GLuint kProgramId;
 
         // Reads the contents of the file in the path to a string.
         // Used in the constructor to open and read the shader files.
@@ -49,6 +50,12 @@ public:
         // in the paths.
         ShaderProgram(const std::string &vertex_path,
                       const std::string &fragment_path);
+
+        ShaderProgram(const ShaderProgram&) = delete;
+        ShaderProgram& operator=(const ShaderProgram&) = delete;
+
+        ShaderProgram(ShaderProgram&& other) noexcept;
+        ShaderProgram& operator=(ShaderProgram &&other) noexcept;
         ~ShaderProgram();
 
         void Use() const;

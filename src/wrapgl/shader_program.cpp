@@ -2,6 +2,7 @@
 
 #include "shader_program.h"
 
+#include <cassert>
 #include <exception>
 #include <fstream>
 #include <glm/matrix.hpp>
@@ -10,15 +11,38 @@
 #include <stdexcept>
 #include <string>
 
+#include "util.h"
+
 constexpr int kLogSize = 512;
 
 using namespace std;
 
 namespace wgl {
 
-ShaderProgram::ShaderProgram(const string &vertex_path, const string &fragment_path)
-        : kProgramId(glCreateProgram())
+ShaderProgram::ShaderProgram(ShaderProgram&& other) noexcept 
+        : kProgramId(other.kProgramId)
 {
+        other.kProgramId = 0;
+}
+
+ShaderProgram& ShaderProgram::operator=(ShaderProgram &&other) noexcept
+{
+        if (this != &other) {
+                if (kProgramId != 0) {
+                        glDeleteProgram(kProgramId);
+                }
+
+                kProgramId = other.kProgramId;
+                other.kProgramId = 0;
+        }
+
+        return *this;
+}
+
+ShaderProgram::ShaderProgram(const string &vertex_path, const string &fragment_path)
+{
+        assert(glGetError() == GL_NO_ERROR);
+
         // Only delete if they are 0.
         unsigned int vertex = 0, fragment = 0;
 
@@ -35,9 +59,11 @@ ShaderProgram::ShaderProgram(const string &vertex_path, const string &fragment_p
 
                 vertex = glCreateShader(GL_VERTEX_SHADER);
                 fragment = glCreateShader(GL_FRAGMENT_SHADER);
+                assert(glGetError() == GL_NO_ERROR);
 
                 glShaderSource(vertex, 1, &vertex_code, nullptr);
                 glShaderSource(fragment, 1, &fragment_code, nullptr);
+                assert(glGetError() == GL_NO_ERROR);
 
                 string info_log;
 
@@ -51,16 +77,21 @@ ShaderProgram::ShaderProgram(const string &vertex_path, const string &fragment_p
                                         "SHADER: " + info_log);
                 }
 
+                kProgramId = glCreateProgram();
+                assert(kProgramId != 0);
+                // WHAT IN THE FUCKING HELL IS HAPPENINNNNNNNNNNNG!! 
+                // LORD HELP ME. I'M GOING INSANE.
+                assert(glIsProgram(kProgramId) == GL_TRUE);
                 glAttachShader(kProgramId, vertex); 
                 glAttachShader(kProgramId, fragment);
-
-                glDeleteShader(vertex);
-                glDeleteShader(fragment);
 
                 if (!LinkProgram(info_log)) {
                         throw std::runtime_error("ERROR: FAILED TO LINK SHADER "
                                         "PROGRAM: " + info_log);
                 }
+
+                glDeleteShader(vertex);
+                glDeleteShader(fragment);
 
         } catch (exception &e) {
                 if (vertex != 0) {
@@ -75,13 +106,17 @@ ShaderProgram::ShaderProgram(const string &vertex_path, const string &fragment_p
 
                 // Throw again. This catch statement was only used for cleanup
                 // before the program stopped completely.
-                throw;
+                throw std::runtime_error("WHAT?");
         }
+
+        assert(glGetError() == GL_NO_ERROR);
 }
 
 ShaderProgram::~ShaderProgram()
 {
-        glDeleteProgram(kProgramId);
+        if (kProgramId != 0) {
+                glDeleteProgram(kProgramId);
+        }
 }
 
 string ShaderProgram::ReadFileToString(const string &path)
@@ -111,6 +146,7 @@ string ShaderProgram::ReadFileToString(const string &path)
 
 bool ShaderProgram::CompileShader(unsigned int shader, string &out_info_log)
 {
+        assert(glGetError() == GL_NO_ERROR);
         glCompileShader(shader);
 
         int success;
@@ -126,42 +162,56 @@ bool ShaderProgram::CompileShader(unsigned int shader, string &out_info_log)
         }
         
         out_info_log = "";
+        assert(glGetError() == GL_NO_ERROR);
         return true;
 }
 
 bool ShaderProgram::LinkProgram(std::string &out_info_log) const
 {
+        assert(glGetError() == GL_NO_ERROR);
         glLinkProgram(kProgramId);
 
         int success;
         char info_log[kLogSize];
 
         glGetProgramiv(kProgramId, GL_LINK_STATUS, &success);
+        assert(glGetError() == GL_NO_ERROR);
 
         if (!success) {
+                assert(glGetError() == GL_NO_ERROR);
                 glGetProgramInfoLog(kProgramId, kLogSize, nullptr, info_log);
                 out_info_log = info_log; 
 
                 return false;
         }
 
+        assert(glGetError() == GL_NO_ERROR);
         return true;
 }
 
+void ShaderProgram::Use() const
+{
+        assert(glIsProgram(kProgramId) == GL_TRUE);
+        assert(kProgramId != 0);
+        glUseProgram(kProgramId);
+        assert(glGetError() == GL_NO_ERROR);
+}
 
 void ShaderProgram::SetVec3(const std::string &name, const glm::vec3 &vec) const
 {
         glUniform3fv(glGetUniformLocation(kProgramId, name.c_str()), 1, &vec[0]);
+        assert(glGetError() == GL_NO_ERROR);
 }
 
 void ShaderProgram::SetMat4(const std::string &name, const glm::mat4 &mat) const
 {
         glUniformMatrix4fv(
                         glGetUniformLocation(kProgramId, name.c_str()),
-                        GL_FALSE,
                         1,
+                        GL_FALSE,
                         &mat[0][0]
                         );
+        assert(glGetError() == GL_NO_ERROR);
 }
 
 } // wgl

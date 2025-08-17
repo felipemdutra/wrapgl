@@ -3,6 +3,7 @@
 #include "window.h"
 
 #include <GLFW/glfw3.h>
+#include <cassert>
 #include <stdexcept>
 
 namespace wgl {
@@ -15,14 +16,16 @@ Window::Window(int width, int height, const std::string &title)
         }
 
         // Configure context
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 4);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
         handle_ = glfwCreateWindow(width_, height_, title_.c_str(), nullptr,
                         nullptr);
-
-        glfwMakeContextCurrent(handle_);
+        if (!handle_) {
+                glfwTerminate();
+                throw std::runtime_error("FAILED TO INITIALIZE GLFW WINDOW");
+        }
 
         // This function sets this Window object as a pointer to our handle
         // window.
@@ -42,8 +45,12 @@ Window::Window(int width, int height, const std::string &title)
                 throw std::runtime_error("ERROR: FAILED TO INITIALIZE GLEW");
         }
 
+        assert(glGetError() == GL_NO_ERROR);
+
         // Callback if window gets resized
         glfwSetFramebufferSizeCallback(handle_, FrameBufferSizeCallback);
+        
+        glEnable(GL_DEPTH_TEST);
 }
 
 Window::~Window()
@@ -63,7 +70,9 @@ void Window::FrameBufferSizeCallback(GLFWwindow *handle, int w, int h)
                 window->SetHeight(h);
 
                 glViewport(0, 0, w, h);
+                assert(glGetError() == GL_NO_ERROR);
         }
+        assert(glGetError() == GL_NO_ERROR);
 }
 
 } // namespace wgl
