@@ -13,7 +13,8 @@ public:
         MeshFactory() = delete;
 
         // @brief Creates a cube mesh using the specified vertex layout.
-        static Mesh* GetCube(const VertexLayout &layout, const glm::vec3 *rgb);
+        static Mesh* GetCube(const VertexLayout &layout, const glm::vec3 *rgb, bool dynamic);
+        static Mesh* GetPyramid(const VertexLayout &layout, const glm::vec3 *rgb, bool dynamic);
 
         static void DestroyMesh(Mesh *mesh);
 };

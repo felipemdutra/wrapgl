@@ -1,6 +1,8 @@
 #ifndef RENDERER_H
 #define RENDERER_H
 
+#include <array>
+#include <cstddef>
 #include <unordered_map>
 #include <string_view>
 #include <string>
@@ -78,8 +80,13 @@ public:
 
         void Draw(unsigned int vao, unsigned int index_count) const;
 
+        void DrawArrays(unsigned int vao, GLenum mode, GLsizei vertex_count) const;
+
         void DrawInstanced(unsigned int vao, unsigned int index_count,
                         GLsizei instance_count) const;
+
+//        template <typename Type, size_t Nm>
+//        void DrawArrays(std::array<Type, Nm> arr) const;
 
         void Clear(float r, float g, float b, float a, bool clear_depht) const;
 };

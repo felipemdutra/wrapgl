@@ -71,6 +71,15 @@ void Renderer::Draw(unsigned int vao, unsigned int index_count) const
         assert(glGetError() == GL_NO_ERROR);
 }
 
+void Renderer::DrawArrays(unsigned int vao, GLenum mode, GLsizei vertex_count) const
+{
+    assert(glGetError() == GL_NO_ERROR);
+    glBindVertexArray(vao);
+    glDrawArrays(mode, 0, vertex_count);
+    glBindVertexArray(0);
+    assert(glGetError() == GL_NO_ERROR);
+}
+
 void Renderer::DrawInstanced(unsigned int vao, unsigned int index_count,
                 GLsizei instance_count) const
 {
